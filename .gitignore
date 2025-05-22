@@ -134,3 +134,15 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Node.js
+node_modules/
+dist/
+.env
+
+# Worker
+worker/.dev.vars
+worker/wrangler.toml
+
+# Frontend
+frontend/.env
