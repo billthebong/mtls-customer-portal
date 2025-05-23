@@ -35,7 +35,7 @@ async function handleRequest(request, env) {
 
   // CORS headers (updated for production)
   const corsHeaders = {
-    'Access-Control-Allow-Origin': ' https://customer-portal-worker.bradford-jardine.workers.dev',
+    'Access-Control-Allow-Origin': 'https://mtls-customer-portal.pages.dev',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
