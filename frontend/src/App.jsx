@@ -2,23 +2,25 @@ import { useState } from 'react';
 import axios from 'axios';
 import './index.css';
 
-const App = () => {
-  const [token, setToken] = useState(localStorage.getItem('token') || '');
+function App() {
+  const apiBaseUrl = 'https://mtls-customer-portal-worker.bradford-jardine.workers.dev';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
   const [certificates, setCertificates] = useState([]);
   const [error, setError] = useState('');
 
-  const apiBaseUrl = 'https://mtls-customer-portal-worker.bradford-jardine.workers.dev';
-
-  const login = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     try {
-      const response = await axios.post(`${apiBaseUrl}/api/login`, { username, password });
+      const response = await axios.post(`${apiBaseUrl}/api/login`, {
+        username,
+        password,
+      });
       setToken(response.data.token);
-      localStorage.setItem('token', response.data.token);
       setError('');
     } catch (err) {
-      setError('Invalid credentials');
+      setError('Invalid username or password');
     }
   };
 
@@ -38,76 +40,94 @@ const App = () => {
 
   const downloadCertificate = async (downloadToken) => {
     try {
-      const response = await axios.get(`${apiBaseUrl}/api/certificates/download/${downloadToken}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob',
-      });
+      const response = await axios.get(
+        `${apiBaseUrl}/api/certificates/download/${downloadToken}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob',
+        }
+      );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'certificate.pem');
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
     } catch (err) {
       setError('Failed to download certificate');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-blue-600 text-white">
       {!token ? (
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-          <h1 className="text-2xl font-bold mb-4">mTLS Customer Portal Login</h1>
-          <input
-            type="text"
-            placeholder="Username"
-            className="w-full p-2 mb-4 border rounded"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 mb-4 border rounded"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-            onClick={login}
-          >
-            Login
-          </button>
-          {error && <p className="text-red-500 mt-4">{error}</p>}
+        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg text-gray-800">
+          <h1 className="text-2xl font-bold text-center mb-6">mTLS Customer Portal Login</h1>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium">Password</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+            >
+              Login
+            </button>
+          </form>
+          {error && <p className="mt-4 text-center text-red-600">{error}</p>}
         </div>
       ) : (
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-          <h1 className="text-2xl font-bold mb-4">Manage Certificates</h1>
+        <div className="w-full max-w-2xl p-8 bg-white rounded-lg shadow-lg text-gray-800">
+          <h1 className="text-2xl font-bold text-center mb-6">mTLS Customer Portal</h1>
           <button
-            className="w-full bg-green-500 text-white p-2 rounded mb-4 hover:bg-green-600"
             onClick={generateCertificate}
+            className="w-full py-2 mb-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
             Generate New Certificate
           </button>
-          <ul>
-            {certificates.map((cert) => (
-              <li key={cert.id} className="mb-2">
-                Certificate ID: {cert.id}
-                <button
-                  className="ml-4 bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                  onClick={() => downloadCertificate(cert.downloadToken)}
-                >
-                  Download
-                </button>
-              </li>
-            ))}
-          </ul>
-          {error && <p className="text-red-500 mt-4">{error}</p>}
+          {certificates.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Certificates</h2>
+              <ul className="space-y-2">
+                {certificates.map((cert) => (
+                  <li key={cert.id} className="flex justify-between items-center p-2 bg-gray-100 rounded-md">
+                    <span>Certificate ID: {cert.id}</span>
+                    <button
+                      onClick={() => downloadCertificate(cert.downloadToken)}
+                      className="px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    >
+                      Download
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {error && <p className="mt-4 text-center text-red-600">{error}</p>}
         </div>
       )}
     </div>
   );
-};
+}
 
 export default App;
